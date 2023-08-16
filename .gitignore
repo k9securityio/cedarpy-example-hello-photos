@@ -1,6 +1,10 @@
 # Distribution / packaging
 .Python
 env/
+venv
+venv/
+venv-dev/
+venv-policy-gen/
 build/
 develop-eggs/
 dist/
@@ -15,6 +19,18 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+.idea/
+.coverage
+*.test-report.xml
+tests/results/
+k9-backend.iml
 
 # Serverless directories
-.serverless
+.serverless/
+
+# Python artifacts
+__pycache__/
+node_modules/
+
+# Miscellaneous
+*.out
