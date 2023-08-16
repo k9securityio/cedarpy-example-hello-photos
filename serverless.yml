@@ -106,3 +106,9 @@ functions:
 
 resources:
   Description: "hello-photos deployment for stage: ${self:provider.stage}, branch: ${self:provider.build_branch}"
+  Resources:
+    PhotosBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: hello-photos-bucket-${self:provider.stage}
+
