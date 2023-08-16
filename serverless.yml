@@ -22,6 +22,9 @@ frameworkVersion: '3'
 
 provider:
   name: aws
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+  build_branch: ${env:BUILD_BRANCH, 'unknown'}
   runtime: python3.9
 
 # you can overwrite defaults here
@@ -101,14 +104,5 @@ functions:
 #    environment:
 #      variable2: value2
 
-# you can add CloudFormation resource templates here
-#resources:
-#  Resources:
-#    NewResource:
-#      Type: AWS::S3::Bucket
-#      Properties:
-#        BucketName: my-new-bucket
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"
+resources:
+  Description: "hello-photos deployment for stage: ${self:provider.stage}, branch: ${self:provider.build_branch}"
