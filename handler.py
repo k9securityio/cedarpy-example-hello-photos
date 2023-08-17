@@ -22,7 +22,7 @@ if not aws_exec_env:
 logger = logging.getLogger(__name__)
 
 
-def hello_cedarpy(event, context):
+def hello_cedarpy(event: dict, context: dict) -> dict:
     """The hello_cedarpy function just verifies cedarpy can be loaded and executed correctly by formatting a policy"""
     input_policies: str = dedent("""
                 permit(
@@ -47,3 +47,8 @@ def hello_cedarpy(event, context):
     }
 
     return response
+
+
+def view_photo(event: dict, context: dict) -> dict:
+    pass
+

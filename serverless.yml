@@ -8,6 +8,9 @@ provider:
   build_branch: ${env:BUILD_BRANCH, 'unknown'}
   runtime: python3.9
 
+  apiGateway:
+    minimumCompressionSize: 1024
+
 custom:
   pythonRequirements:
     # docs: https://www.serverless.com/plugins/serverless-python-requirements
@@ -46,7 +49,6 @@ package:
   # https://www.serverless.com/framework/docs/providers/aws/guide/packaging
   patterns:
     - '*.py'
-    - 'rules/**'
     - '!.git/**'
     - '!.idea/**'
     - '!*.iml'
@@ -62,6 +64,23 @@ package:
 functions:
   hello_cedarpy:
     handler: handler.hello_cedarpy
+    description: ${self:service} - check if cedarpy is working
+
+  view_photo:
+    handler: handler.view_photo
+    description: ${self:service} - View a photo
+    events:
+      - http:
+          path: "users/{userId}/photos/{photoId}"
+          method: GET
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 30
+            identitySource: method.request.header.Authorization
+            type: token
+  authorizer:
+    handler: authorizer.authorize
+    description: ${self:service} - API authorizer
 
 resources:
   Description: "hello-photos deployment for stage: ${self:provider.stage}, branch: ${self:provider.build_branch}"
