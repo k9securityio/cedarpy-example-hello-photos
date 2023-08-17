@@ -8,6 +8,9 @@ provider:
   build_branch: ${env:BUILD_BRANCH, 'unknown'}
   runtime: python3.9
 
+  environment:
+    STAGE: ${self:provider.stage}
+
   apiGateway:
     minimumCompressionSize: 1024
 
