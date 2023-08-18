@@ -25,6 +25,10 @@ custom:
     automatic: true
     number: 3
 
+  times_in_seconds:
+    - &15s 15
+    - &1m 60
+
 
 # you can add statements to the Lambda function's IAM Role here
 #  iam:
@@ -72,6 +76,8 @@ functions:
   view_photo:
     handler: handler.view_photo
     description: ${self:service} - View a photo
+    timeout: *15s
+    memorySize: 512
     events:
       - http:
           path: "users/{userId}/photos/{photoId}"
@@ -81,6 +87,11 @@ functions:
             resultTtlInSeconds: 30
             identitySource: method.request.header.Authorization
             type: token
+          request:
+            parameters:
+              paths:
+                userId: true
+                photoId: true
   authorizer:
     handler: authorizer.authorize
     description: ${self:service} - API authorizer
