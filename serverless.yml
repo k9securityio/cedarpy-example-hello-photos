@@ -73,25 +73,25 @@ functions:
     handler: handler.hello_cedarpy
     description: ${self:service} - check if cedarpy is working
 
-  view_photo:
-    handler: handler.view_photo
-    description: ${self:service} - View a photo
-    timeout: *15s
-    memorySize: 512
-    events:
-      - http:
-          path: "users/{userId}/photos/{photoId}"
-          method: GET
-          authorizer:
-            name: authorizer
-            resultTtlInSeconds: 30
-            identitySource: method.request.header.Authorization
-            type: token
-          request:
-            parameters:
-              paths:
-                userId: true
-                photoId: true
+#  view_photo:
+#    handler: handler.view_photo
+#    description: ${self:service} - View a photo
+#    timeout: *15s
+#    memorySize: 512
+#    events:
+#      - http:
+#          path: "users/{userId}/photos/{photoId}"
+#          method: GET
+#          authorizer:
+#            name: authorizer
+#            resultTtlInSeconds: 30
+#            identitySource: method.request.header.Authorization
+#            type: token
+#          request:
+#            parameters:
+#              paths:
+#                userId: true
+#                photoId: true
   authorizer:
     handler: authorizer.authorize
     description: ${self:service} - API authorizer
@@ -103,6 +103,139 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: hello-photos-bucket-${self:provider.stage}
+    # adapted from https://cloudncode.blog/2017/08/08/tidbit-api-gateway-as-a-s3-proxy-cloudformation-script-with-serverless-framework/
+    s3Proxy:
+      Type: "AWS::ApiGateway::RestApi"
+      Properties:
+        BinaryMediaTypes: #add or substract MIME types here
+          - image/png
+          - image/jpg
+          - image/gif
+          - image/x-icon
+          - application/octet-stream
+        Description: API for hello-photos ${opt:stage}
+        FailOnWarnings: false
+        Name: ${self:provider.stage}-hello-photos-api
+    ApiResourceUsers:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        ParentId:
+          Fn::GetAtt:
+            - "s3Proxy"
+            - "RootResourceId"
+        PathPart: "users"
+        RestApiId:
+          Ref: "s3Proxy"
+    ApiResourceUserId:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        ParentId:
+          Fn::GetAtt:
+            - "ApiResourceUsers"
+            - "ResourceId"
+        PathPart: "{userId}"
+        RestApiId:
+          Ref: "s3Proxy"
+    ApiResourceUserPhotos:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        ParentId:
+          Fn::GetAtt:
+            - "ApiResourceUserId"
+            - "ResourceId"
+        PathPart: "photos"
+        RestApiId:
+          Ref: "s3Proxy"
+    ApiResourceUserPhotoId:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        ParentId:
+          Fn::GetAtt:
+            - "ApiResourceUserPhotos"
+            - "ResourceId"
+        PathPart: "{photoId}"
+        RestApiId:
+          Ref: "s3Proxy"
+
+    s3ProxyAnyMethod:
+      Type: "AWS::ApiGateway::Method"
+      Properties:
+        ApiKeyRequired: false
+        AuthorizationType: NONE
+#        AuthorizationType: CUSTOM
+#        AuthorizerId:
+#          Ref: "s3ProxyAuthorizer"
+        HttpMethod: GET
+        RequestParameters:
+          method.request.header.Content-Disposition: false
+          method.request.header.Content-Type: false
+          method.request.header.x-amz-acl: false
+          method.request.path.userId: true
+          method.request.path.photoId: true
+        Integration:
+          Credentials: arn:aws:iam::139710491120:role/hello-photos-dev-main-us-east-1-lambdaRole
+          IntegrationHttpMethod: ANY
+          IntegrationResponses:
+              - StatusCode: 200
+                ResponseParameters:
+                  method.response.header.Content-Type: integration.response.header.Content-Type
+                  method.response.header.Content-Disposition: integration.response.header.Content-Disposition
+              - StatusCode: 400
+                SelectionPattern: "400"
+                ResponseParameters:
+                  method.response.header.Content-Type: integration.response.header.Content-Type
+                  method.response.header.Content-Disposition: integration.response.header.Content-Disposition
+              - StatusCode: 404
+                SelectionPattern: "404"
+                ResponseParameters:
+                  method.response.header.Content-Type: integration.response.header.Content-Type
+                  method.response.header.Content-Disposition: integration.response.header.Content-Disposition
+              - StatusCode: 500
+                SelectionPattern: '5\d{2}'
+                ResponseParameters:
+                  method.response.header.Content-Type: integration.response.header.Content-Type
+                  method.response.header.Content-Disposition: integration.response.header.Content-Disposition
+          PassthroughBehavior: WHEN_NO_MATCH
+          RequestParameters:
+            integration.request.header.Content-Disposition: method.request.header.Content-Disposition
+            integration.request.header.Content-Type: method.request.header.Content-Type
+            integration.request.header.x-amz-acl: method.request.header.x-amz-acl
+            integration.request.path.userId: method.request.path.userId
+            integration.request.path.photoId: method.request.path.photoId
+          Type: AWS
+          Uri: arn:aws:apigateway:us-east-1:s3:path/hello-photos-bucket-${self:provider.stage}/users/{userId}/photos/{photoId}
+        MethodResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Content-Type: integration.response.header.Content-Type
+              method.response.header.Content-Disposition: integration.response.header.Content-Disposition
+          - StatusCode: 400
+            ResponseParameters:
+              method.response.header.Content-Type: integration.response.header.Content-Type
+              method.response.header.Content-Disposition: integration.response.header.Content-Disposition
+          - StatusCode: 404
+            ResponseParameters:
+              method.response.header.Content-Type: integration.response.header.Content-Type
+              method.response.header.Content-Disposition: integration.response.header.Content-Disposition
+          - StatusCode: 500
+            ResponseParameters:
+              method.response.header.Content-Type: integration.response.header.Content-Type
+              method.response.header.Content-Disposition: integration.response.header.Content-Disposition
+        ResourceId:
+          Fn::GetAtt:
+            - "ApiResourceUserPhotoId"
+            - "ResourceId"
+        RestApiId:
+          Ref: "s3Proxy"
+    ApiGatewayDeploymentthisiswhatiwillreplace:
+      Type: 'AWS::ApiGateway::Deployment'
+      Properties:
+        RestApiId:
+          Ref: "s3Proxy"
+        StageName: ${opt:stage}
+      DependsOn:
+        - s3ProxyAnyMethod
+
 
 plugins:
   - serverless-python-requirements
