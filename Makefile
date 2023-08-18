@@ -125,3 +125,9 @@ deploy: metadata
 	BUILD_BRANCH=$(BUILD_BRANCH) \
 	sls deploy --verbose --stage $(STAGE)
 
+.PHONY: package
+package: metadata
+	@echo package BUILD_BRANCH is $(BUILD_BRANCH)
+	BUILD_BRANCH=$(BUILD_BRANCH) \
+	sls package --verbose --stage $(STAGE)
+
