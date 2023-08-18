@@ -28,24 +28,6 @@ custom:
     - &1m 60
 
 
-# you can add statements to the Lambda function's IAM Role here
-#  iam:
-#    role:
-#      statements:
-#        - Effect: "Allow"
-#          Action:
-#            - "s3:ListBucket"
-#          Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#        - Effect: "Allow"
-#          Action:
-#            - "s3:PutObject"
-#          Resource:
-#            Fn::Join:
-#              - ""
-#              - - "arn:aws:s3:::"
-#                - "Ref" : "ServerlessDeploymentBucket"
-#                - "/*"
-
 # you can define service wide environment variables here
 #  environment:
 #    variable1: value1
@@ -74,6 +56,28 @@ functions:
   authorizer:
     handler: authorizer.authorize
     description: ${self:service} - API authorizer
+
+    # TODO: add custom CFn resource policy that allows API gateway to invoke, similar to:
+    # {
+    #  "Version": "2012-10-17",
+    #  "Id": "default",
+    #  "Statement": [
+    #    {
+    #      "Sid": "a3febc16-037c-4ee2-bc78-4af89abc4908",
+    #      "Effect": "Allow",
+    #      "Principal": {
+    #        "Service": "apigateway.amazonaws.com"
+    #      },
+    #      "Action": "lambda:InvokeFunction",
+    #      "Resource": "arn:aws:lambda:us-east-1:139710491120:function:hello-photos-dev-main-authorizer",
+    #      "Condition": {
+    #        "ArnLike": {
+    #          "AWS:SourceArn": "arn:aws:execute-api:us-east-1:139710491120:vr3d61pcqe/authorizers/9epkxk"
+    #        }
+    #      }
+    #    }
+    #  ]
+    #}
 
 resources:
   Description: "hello-photos deployment for stage: ${self:provider.stage}, branch: ${self:provider.build_branch}"
@@ -120,6 +124,27 @@ resources:
         Description: API for hello-photos ${opt:stage}
         FailOnWarnings: false
         Name: ${self:provider.stage}-hello-photos-api
+
+    S3ProxyAuthorizer: # custom authorizer for the API gateway for accessing the bucket
+      Type: "AWS::ApiGateway::Authorizer"
+      Properties:
+        AuthorizerResultTtlInSeconds: 5
+        # configure Authorizer *URI* (not Arn):
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-authorizer.html#cfn-apigateway-authorizer-authorizeruri
+        AuthorizerUri: { "Fn::Join" : [ "",
+          [ "arn:aws:apigateway:us-east-1:lambda:path//2015-03-31/functions/",
+            { "Fn::GetAtt" : [ "AuthorizerLambdaFunction", "Arn" ] },
+            "/invocations"
+          ]
+        ]
+        }
+        IdentitySource: method.request.header.Authorization
+        IdentityValidationExpression: ^Bearer.+
+        Name: CommonAuthorizer
+        RestApiId:
+          Ref: "S3ProxyApi"
+        Type: TOKEN
+
     ApiResourceUsers:
       Type: AWS::ApiGateway::Resource
       Properties:
@@ -165,10 +190,10 @@ resources:
       Type: "AWS::ApiGateway::Method"
       Properties:
         ApiKeyRequired: false
-        AuthorizationType: NONE
-#        AuthorizationType: CUSTOM
-#        AuthorizerId:
-#          Ref: "s3ProxyAuthorizer"
+#        AuthorizationType: NONE
+        AuthorizationType: CUSTOM
+        AuthorizerId:
+          Ref: S3ProxyAuthorizer
         HttpMethod: GET
         RequestParameters:
           method.request.header.Content-Disposition: false
