@@ -7,7 +7,8 @@ provider:
   region: us-east-1
   build_branch: ${env:BUILD_BRANCH, 'unknown'}
   runtime: python3.9
-
+  iam:
+    role: HelloPhotosAppRole
   environment:
     STAGE: ${self:provider.stage}
 
@@ -77,15 +78,40 @@ functions:
 resources:
   Description: "hello-photos deployment for stage: ${self:provider.stage}, branch: ${self:provider.build_branch}"
   Resources:
+    HelloPhotosAppRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: hello-photos-${self:provider.stage}
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+                  - apigateway.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        Policies:
+          - PolicyName: ReadAppData
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - s3:GetObject
+                  Resource: 'arn:aws:s3:::hello-photos-bucket-${self:provider.stage}*/*'
+
     PhotosBucket:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: hello-photos-bucket-${self:provider.stage}
     # adapted from https://cloudncode.blog/2017/08/08/tidbit-api-gateway-as-a-s3-proxy-cloudformation-script-with-serverless-framework/
-    s3Proxy:
+    S3ProxyApi:
       Type: "AWS::ApiGateway::RestApi"
       Properties:
-        BinaryMediaTypes: #add or substract MIME types here
+        BinaryMediaTypes: # add or subtract MIME types here
           - image/png
           - image/jpg
           - image/gif
@@ -99,11 +125,11 @@ resources:
       Properties:
         ParentId:
           Fn::GetAtt:
-            - "s3Proxy"
+            - "S3ProxyApi"
             - "RootResourceId"
         PathPart: "users"
         RestApiId:
-          Ref: "s3Proxy"
+          Ref: "S3ProxyApi"
     ApiResourceUserId:
       Type: AWS::ApiGateway::Resource
       Properties:
@@ -113,7 +139,7 @@ resources:
             - "ResourceId"
         PathPart: "{userId}"
         RestApiId:
-          Ref: "s3Proxy"
+          Ref: "S3ProxyApi"
     ApiResourceUserPhotos:
       Type: AWS::ApiGateway::Resource
       Properties:
@@ -123,7 +149,7 @@ resources:
             - "ResourceId"
         PathPart: "photos"
         RestApiId:
-          Ref: "s3Proxy"
+          Ref: "S3ProxyApi"
     ApiResourceUserPhotoId:
       Type: AWS::ApiGateway::Resource
       Properties:
@@ -133,9 +159,9 @@ resources:
             - "ResourceId"
         PathPart: "{photoId}"
         RestApiId:
-          Ref: "s3Proxy"
+          Ref: "S3ProxyApi"
 
-    s3ProxyAnyMethod:
+    s3ProxyGetMethod:
       Type: "AWS::ApiGateway::Method"
       Properties:
         ApiKeyRequired: false
@@ -150,9 +176,9 @@ resources:
           method.request.path.userId: true
           method.request.path.photoId: true
         Integration:
-          Credentials: { "Fn::Join": [ "", [ "arn:aws:iam::",
-                                             { "Ref": 'AWS::AccountId' },
-                                             ":hello-photos-dev-main-us-east-1-lambdaRole" ] ] }
+          Type: AWS
+          Uri: arn:aws:apigateway:us-east-1:s3:path/hello-photos-bucket-${self:provider.stage}/users/{userId}/photos/{photoId}
+          Credentials: !GetAtt HelloPhotosAppRole.Arn 
           IntegrationHttpMethod: GET
           IntegrationResponses:
               - StatusCode: 200
@@ -180,8 +206,6 @@ resources:
             integration.request.header.Content-Type: method.request.header.Content-Type
             integration.request.path.userId: method.request.path.userId
             integration.request.path.photoId: method.request.path.photoId
-          Type: AWS
-          Uri: arn:aws:apigateway:us-east-1:s3:path/hello-photos-bucket-${self:provider.stage}/users/{userId}/photos/{photoId}
         MethodResponses:
           - StatusCode: 200
             ResponseParameters:
@@ -204,15 +228,15 @@ resources:
             - "ApiResourceUserPhotoId"
             - "ResourceId"
         RestApiId:
-          Ref: "s3Proxy"
+          Ref: "S3ProxyApi"
     ApiGatewayDeployment:
       Type: 'AWS::ApiGateway::Deployment'
       Properties:
         RestApiId:
-          Ref: "s3Proxy"
+          Ref: "S3ProxyApi"
         StageName: ${opt:stage}
       DependsOn:
-        - s3ProxyAnyMethod
+        - s3ProxyGetMethod
 
 
 plugins:
