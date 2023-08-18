@@ -73,25 +73,6 @@ functions:
     handler: handler.hello_cedarpy
     description: ${self:service} - check if cedarpy is working
 
-#  view_photo:
-#    handler: handler.view_photo
-#    description: ${self:service} - View a photo
-#    timeout: *15s
-#    memorySize: 512
-#    events:
-#      - http:
-#          path: "users/{userId}/photos/{photoId}"
-#          method: GET
-#          authorizer:
-#            name: authorizer
-#            resultTtlInSeconds: 30
-#            identitySource: method.request.header.Authorization
-#            type: token
-#          request:
-#            parameters:
-#              paths:
-#                userId: true
-#                photoId: true
   authorizer:
     handler: authorizer.authorize
     description: ${self:service} - API authorizer
@@ -174,7 +155,7 @@ resources:
           method.request.path.photoId: true
         Integration:
           Credentials: arn:aws:iam::139710491120:role/hello-photos-dev-main-us-east-1-lambdaRole
-          IntegrationHttpMethod: ANY
+          IntegrationHttpMethod: GET
           IntegrationResponses:
               - StatusCode: 200
                 ResponseParameters:
@@ -227,7 +208,7 @@ resources:
             - "ResourceId"
         RestApiId:
           Ref: "s3Proxy"
-    ApiGatewayDeploymentthisiswhatiwillreplace:
+    ApiGatewayDeployment:
       Type: 'AWS::ApiGateway::Deployment'
       Properties:
         RestApiId:
