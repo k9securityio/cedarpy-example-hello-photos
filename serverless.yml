@@ -147,7 +147,6 @@ resources:
         RequestParameters:
           method.request.header.Content-Disposition: false
           method.request.header.Content-Type: false
-          method.request.header.x-amz-acl: false
           method.request.path.userId: true
           method.request.path.photoId: true
         Integration:
@@ -179,7 +178,6 @@ resources:
           RequestParameters:
             integration.request.header.Content-Disposition: method.request.header.Content-Disposition
             integration.request.header.Content-Type: method.request.header.Content-Type
-            integration.request.header.x-amz-acl: method.request.header.x-amz-acl
             integration.request.path.userId: method.request.path.userId
             integration.request.path.photoId: method.request.path.photoId
           Type: AWS
