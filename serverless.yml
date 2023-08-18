@@ -11,9 +11,6 @@ provider:
   environment:
     STAGE: ${self:provider.stage}
 
-  apiGateway:
-    minimumCompressionSize: 1024
-
 custom:
   pythonRequirements:
     # docs: https://www.serverless.com/plugins/serverless-python-requirements
