@@ -151,7 +151,9 @@ resources:
           method.request.path.userId: true
           method.request.path.photoId: true
         Integration:
-          Credentials: arn:aws:iam::139710491120:role/hello-photos-dev-main-us-east-1-lambdaRole
+          Credentials: { "Fn::Join": [ "", [ "arn:aws:iam::",
+                                             { "Ref": 'AWS::AccountId' },
+                                             ":hello-photos-dev-main-us-east-1-lambdaRole" ] ] }
           IntegrationHttpMethod: GET
           IntegrationResponses:
               - StatusCode: 200
