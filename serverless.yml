@@ -128,6 +128,13 @@ resources:
     S3ProxyAuthorizer: # custom authorizer for the API gateway for accessing the bucket
       Type: "AWS::ApiGateway::Authorizer"
       Properties:
+        Name: CommonAuthorizer
+        Type: REQUEST
+        IdentitySource: method.request.header.Authorization
+        # IdentityValidationExpression only applies to Authorizer type 'TOKEN'
+        # IdentityValidationExpression: ^Bearer.+
+        RestApiId:
+          Ref: "S3ProxyApi"
         AuthorizerResultTtlInSeconds: 5
         # configure Authorizer *URI* (not Arn):
         # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-apigateway-authorizer.html#cfn-apigateway-authorizer-authorizeruri
@@ -138,12 +145,6 @@ resources:
           ]
         ]
         }
-        IdentitySource: method.request.header.Authorization
-        IdentityValidationExpression: ^Bearer.+
-        Name: CommonAuthorizer
-        RestApiId:
-          Ref: "S3ProxyApi"
-        Type: TOKEN
 
     ApiResourceUsers:
       Type: AWS::ApiGateway::Resource
@@ -190,12 +191,12 @@ resources:
       Type: "AWS::ApiGateway::Method"
       Properties:
         ApiKeyRequired: false
-#        AuthorizationType: NONE
         AuthorizationType: CUSTOM
         AuthorizerId:
           Ref: S3ProxyAuthorizer
         HttpMethod: GET
         RequestParameters:
+          method.request.header.Authorization: true
           method.request.header.Content-Disposition: false
           method.request.header.Content-Type: false
           method.request.path.userId: true
