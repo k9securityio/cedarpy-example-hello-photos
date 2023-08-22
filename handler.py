@@ -35,7 +35,3 @@ def hello_cedarpy(event: dict, context: dict) -> dict:
 
     return response
 
-
-def view_photo(event: dict, context: dict) -> dict:
-    pass
-
