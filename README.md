@@ -9,7 +9,7 @@ Traditionally, most applications implement authorization logic with if/elif/else
 action = "Action::view"
 photo_id = "a1b2-c3d4"
 # resolve from authentication
-user_id = "Alice"
+user_id = "alice"
 
 # load user and photo metadata, including relationships about which users own or can access which photos
 user_metadata = load_user_metadata(user_id)
@@ -37,9 +37,13 @@ And of course, this can go on for hundreds of lines.  The structure is entirely 
 
 A few common problems emerge from the 'traditional' imperative implementation of access control:
 
-* hard to scale development as more rules are added
-* hard to selectively enable or disable rules
-* hard to understand what rules actually exist and how they interact.  Do you know what your authz rules actually do? Can you prove it?
+* Hard to scale development as more rules are added
+* Hard to manage authz by selectively enabling or disabling rules
+* Hard to understand what rules actually exist and how they interact
+
+Which leads to:
+
+Do you know what your authz rules _actually_ do? Can you prove it?
 
 # Policy-based authorization systems and Cedar Policy
 Smart people have thought about the relationships between principals, actions, and resources and authorization for a long time.
