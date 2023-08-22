@@ -83,6 +83,71 @@ def authorize(authz_e: dict, context: dict) -> dict:
     return response
 
 
+def _load_photo_metadata(photo_id: str) -> object:
+    # this is just a stub to support the example
+    return object()
+
+
+def authorize_traditional(authz_e: dict, context: dict) -> dict:
+    _log_function_execution_metadata(authz_e, context)
+
+    if 'REQUEST' == authz_e.get('type', None):
+        headers = authz_e.get('headers', {})
+        path_params = authz_e.get('pathParameters', {})
+    else:
+        logger.info(f'authz_e type is not REQUEST')
+        return _make_apig_authz_response('unsupported-request-type', 'Deny', '*')
+
+    user_id = path_params.get("userId", None)
+    photo_id = path_params.get("photoId", None)
+
+    if user_id is None or photo_id is None:
+        logger.info(f'authz_e missing userId or photoId path parameter')
+        return _make_apig_authz_response('unknown-principal-or-resource', 'Deny', '*')
+
+    if not is_authenticated(user_id, headers.get('Authorization', None)):
+        logger.info(f'could not authenticate caller')
+        return _make_apig_authz_response('unauthenticated-principal', 'Deny', '*')
+
+    # ok, we've authenticated the principal.  are they authorized?
+
+    principal = f'User::"{user_id}"'
+    action = f'Action::"view"'
+    resource = f'Photo::"{photo_id}"'
+
+
+    effect = "Deny"
+
+    photo_metadata = _load_photo_metadata(photo_id)
+    if action == "Action::view":
+        if photo_metadata.owner and photo_metadata.owner == user_id:
+            effect = "Allow"
+        else:
+            pass
+    elif action == "Action::edit":
+        # if something else...
+        pass
+    else:
+        pass
+
+
+    response = {
+        "principalId": user_id,
+        "policyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": "execute-api:Invoke",
+                    "Effect": effect,
+                    "Resource": authz_e.get('methodArn', 'method-resource-missing')
+                }
+            ]
+        }
+    }
+
+    return response
+
+
 def _get_policies() -> str:
     common_policies = """
             permit(
@@ -91,20 +156,17 @@ def _get_policies() -> str:
                 resource
             )
             when {
-               resource.account == principal
+               resource.owner == principal
             };                
+            @id("allow_friends_to_view_photos")
             permit(
-                principal,
-                action == Action::"delete",
+                principal, 
+                action == Action::"view", 
                 resource
             )
             when {
-                context.authenticated == true
-                &&
-                resource has account && principal == resource.account.owner
-            }
-            ;
-
+               principal in resource.groups_read
+            };                
     """.strip()
     return common_policies
 
@@ -137,7 +199,7 @@ def _get_entities() -> List[dict]:
                 "__expr": "Photo::\"bobs-photo-1\""
             },
             "attrs": {
-                "account": {"__expr": "User::\"bob\""}
+                "owner": {"__expr": "User::\"bob\""}
             },
             "parents": []
         },
@@ -146,7 +208,7 @@ def _get_entities() -> List[dict]:
                 "__expr": 'Photo::"kitt.png"'
             },
             "attrs": {
-                "account": {"__expr": 'User::"skuenzli"'}
+                "owner": {"__expr": 'User::"skuenzli"'}
             },
             "parents": []
         },
