@@ -81,3 +81,17 @@ when {
 };                
 
 ```
+
+## The Hello Photos app architecture
+
+The Hello Photos example application uses a very simple Serverless architecture:
+
+![Hello Photos App Architecture](assets/hello-photos-architecture.png)
+
+Let's explain the architecture by stepping through a request.
+
+First, clients make http requests to the API Gateway.  Clients can request a photo resource with a path of the form: `/users/{userId}/photos/{photoId}`.  For example, `/users/alice/photos/a1b2-c3d4`.  The client must also authenticate the request using a bearer token.
+
+Second, the API Gateway will verify the request is authorized by invoking the `hello-photos`  Authorizer Lambda function.  The Authorizer function unpacks the request and determines if the request is authorized using Cedar Policy and the [cedarpy](https://github.com/k9securityio/cedar-py) library.  The Authorizer will [respond to the gateway with an authorization decision expressed (essentially) as an IAM policy](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-lambda-authorizer-output.html).
+
+Third, if the caller is authorized, then the API Gateway will forward the request to the underlying photos bucket using the S3 direct integration. API Gateway then handles S3's response, returning the image if it's found or the error if one occurs (e.g. 404).  Notice that no Hello Photos application code is required to serve (proxy) the photo.
