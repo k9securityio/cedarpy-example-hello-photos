@@ -2,7 +2,7 @@
 # Introduction to Lambda Authorizers:
 #   https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-use-lambda-authorizer.html
 import logging
-from typing import List
+from typing import List, Optional, Dict
 
 import cedarpy
 
@@ -10,16 +10,26 @@ import helpers
 
 logger = logging.getLogger(__name__)
 
+_USERS_BY_TOKEN: Dict[str, str] = {
+    "open-sesame-1234": "skuenzli"
+}
+
 
 def _log_function_execution_metadata(event: dict, context: dict) -> None:
     helpers.log_function_execution_metadata(logger, event, context)
 
 
-def is_authenticated(user_id, authorization_val):
-    if 'Bearer open-sesame' == authorization_val:
-        return True
+def authenticate(headers: Dict[str, str]) -> Optional[str]:
+    """A toy authentication method that returns the user id authenticated by a bearer token."""
+    # Toy-authentication method alert!
+    # Don't ever authenticate people with hard-coded secrets in a real application.
+    # Consider using Cognito instead.
+    auth_header_val = headers.get('Authorization', None)
+    if auth_header_val is None or not auth_header_val.startswith('Bearer '):
+        return None
     else:
-        return False
+        bearer_val = auth_header_val.removeprefix('Bearer ')
+        return _USERS_BY_TOKEN.get(bearer_val, None)
 
 
 def authorize(authz_e: dict, context: dict) -> dict:
@@ -32,14 +42,15 @@ def authorize(authz_e: dict, context: dict) -> dict:
         logger.info(f'authz_e type is not REQUEST')
         return _make_apig_authz_response('unsupported-request-type', 'Deny', '*')
 
-    user_id = path_params.get("userId", None)
     photo_id = path_params.get("photoId", None)
 
-    if user_id is None or photo_id is None:
-        logger.info(f'authz_e missing userId or photoId path parameter')
+    if photo_id is None:
+        logger.info(f'authz_e missing photoId path parameter')
         return _make_apig_authz_response('unknown-principal-or-resource', 'Deny', '*')
 
-    if not is_authenticated(user_id, headers.get('Authorization', None)):
+    user_id = authenticate(headers)
+
+    if user_id is None:
         logger.info(f'could not authenticate caller')
         return _make_apig_authz_response('unauthenticated-principal', 'Deny', '*')
 
@@ -105,7 +116,9 @@ def authorize_traditional(authz_e: dict, context: dict) -> dict:
         logger.info(f'authz_e missing userId or photoId path parameter')
         return _make_apig_authz_response('unknown-principal-or-resource', 'Deny', '*')
 
-    if not is_authenticated(user_id, headers.get('Authorization', None)):
+    user_id = authenticate(headers)
+
+    if user_id is None:
         logger.info(f'could not authenticate caller')
         return _make_apig_authz_response('unauthenticated-principal', 'Deny', '*')
 

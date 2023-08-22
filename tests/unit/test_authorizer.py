@@ -30,7 +30,7 @@ class AuthorizerTestCase(unittest.TestCase):
             'path': '/users/skuenzli/photos/kitt.png',
             'httpMethod': 'GET',
             'headers': {'Accept': 'image/png',
-                        'Authorization': 'Bearer open-sesame',
+                        'Authorization': 'Bearer open-sesame-1234',
                         'CloudFront-Forwarded-Proto': 'https',
                         'CloudFront-Is-Desktop-Viewer': 'true',
                         'CloudFront-Is-Mobile-Viewer': 'false',
