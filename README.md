@@ -46,7 +46,7 @@ Which leads to:
 Do you know what your authz rules _actually_ do? Can you prove it?
 
 # Policy-based authorization systems and Cedar Policy
-Smart people have thought about the relationships between principals, actions, and resources and authorization for a long time.
+Smart people have thought about the relationships between principals, actions, and resources and authorization for a long time.  The Automated Reasoning group at AWS is full of people like that and they created Cedar Policy.
 
 [Cedar Policy](https://www.cedarpolicy.com) is a fast, scalable access control system:
 
