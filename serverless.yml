@@ -57,28 +57,6 @@ functions:
     handler: authorizer.authorize
     description: ${self:service} - API authorizer
 
-    # TODO: add custom CFn resource policy that allows API gateway to invoke, similar to:
-    # {
-    #  "Version": "2012-10-17",
-    #  "Id": "default",
-    #  "Statement": [
-    #    {
-    #      "Sid": "a3febc16-037c-4ee2-bc78-4af89abc4908",
-    #      "Effect": "Allow",
-    #      "Principal": {
-    #        "Service": "apigateway.amazonaws.com"
-    #      },
-    #      "Action": "lambda:InvokeFunction",
-    #      "Resource": "arn:aws:lambda:us-east-1:139710491120:function:hello-photos-dev-main-authorizer",
-    #      "Condition": {
-    #        "ArnLike": {
-    #          "AWS:SourceArn": "arn:aws:execute-api:us-east-1:139710491120:vr3d61pcqe/authorizers/9epkxk"
-    #        }
-    #      }
-    #    }
-    #  ]
-    #}
-
 resources:
   Description: "hello-photos deployment for stage: ${self:provider.stage}, branch: ${self:provider.build_branch}"
   Resources:
@@ -107,10 +85,22 @@ resources:
                     - s3:GetObject
                   Resource: 'arn:aws:s3:::hello-photos-bucket-${self:provider.stage}*/*'
 
+    AllowAPIGToInvokeAuthorizer:
+      Type: AWS::Lambda::Permission
+      Properties:
+        Action: "lambda:InvokeFunction"
+        FunctionName: !Ref "AuthorizerLambdaFunction"
+        Principal: "apigateway.amazonaws.com"
+        SourceArn:
+          Fn::Sub:
+            - arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayId}/authorizers/*
+            - ApiGatewayId: !Ref S3ProxyApi
+
     PhotosBucket:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: hello-photos-bucket-${self:provider.stage}
+    
     # adapted from https://cloudncode.blog/2017/08/08/tidbit-api-gateway-as-a-s3-proxy-cloudformation-script-with-serverless-framework/
     S3ProxyApi:
       Type: "AWS::ApiGateway::RestApi"
