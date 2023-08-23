@@ -105,12 +105,14 @@ resources:
     S3ProxyApi:
       Type: "AWS::ApiGateway::RestApi"
       Properties:
-        BinaryMediaTypes: # add or subtract MIME types here
+        BinaryMediaTypes: # add or subtract MIME types here; c.f. https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-payload-encodings.html
           - image/png
           - image/jpg
+          - image/jpeg
           - image/gif
           - image/x-icon
           - application/octet-stream
+          - '*/*'
         Description: API for hello-photos ${opt:stage}
         FailOnWarnings: false
         Name: ${self:provider.stage}-hello-photos-api
