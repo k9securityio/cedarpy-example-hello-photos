@@ -218,6 +218,42 @@ def _get_entities() -> List[dict]:
         },
         {
             "uid": {
+                "__expr": 'Photo::"cat-1.jpg"'
+            },
+            "attrs": {
+                "owner": {"__expr": 'User::"skuenzli"'}
+            },
+            "parents": []
+        },
+        {
+            "uid": {
+                "__expr": 'Photo::"doggo-1.jpg"'
+            },
+            "attrs": {
+                "owner": {"__expr": 'User::"skuenzli"'}
+            },
+            "parents": []
+        },
+        {
+            "uid": {
+                "__expr": 'Photo::"doggo-1.png"'
+            },
+            "attrs": {
+                "owner": {"__expr": 'User::"skuenzli"'}
+            },
+            "parents": []
+        },
+        {
+            "uid": {
+                "__expr": 'Photo::"doggo-2.jpg"'
+            },
+            "attrs": {
+                "owner": {"__expr": 'User::"skuenzli"'}
+            },
+            "parents": []
+        },
+        {
+            "uid": {
                 "__expr": 'Photo::"kitt.png"'
             },
             "attrs": {
