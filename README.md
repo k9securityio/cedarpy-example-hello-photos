@@ -95,3 +95,11 @@ First, clients make http requests to the API Gateway.  Clients can request a pho
 Second, the API Gateway will verify the request is authorized by invoking the `hello-photos`  Authorizer Lambda function.  The Authorizer function unpacks the request and determines if the request is authorized using Cedar Policy and the [cedarpy](https://github.com/k9securityio/cedar-py) library.  The Authorizer will [respond to the gateway with an authorization decision expressed (essentially) as an IAM policy](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-lambda-authorizer-output.html).
 
 Third, if the caller is authorized, then the API Gateway will forward the request to the underlying photos bucket using the S3 direct integration. API Gateway then handles S3's response, returning the image if it's found or the error if one occurs (e.g. 404).  Notice that no Hello Photos application code is required to serve (proxy) the photo.
+
+## Resources
+
+Here are some helpful resources for building a Lambda Authorizer that uses Cedar Policy:
+
+* [Cedar Policy](https://www.cedarpolicy.com) - learn more about the Cedar Policy authorization system
+* [cedarpy](https://github.com/k9securityio/cedar-py) - Python bindings for the (Rust) Cedar library
+* [How to build and use a custom API Gateway Lambda Authorizer](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-use-lambda-authorizer.html)
