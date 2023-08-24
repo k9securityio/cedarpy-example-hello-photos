@@ -188,14 +188,14 @@ def _get_entities() -> List[dict]:
     entities: List[dict] = [
         {
             "uid": {
-                "__expr": "User::\"alice\""
+                "__expr": 'User::"alice"'
             },
             "attrs": {},
             "parents": []
         },
         {
             "uid": {
-                "__expr": "User::\"bob\""
+                "__expr": 'User::"bob"'
             },
             "attrs": {},
             "parents": []
@@ -209,10 +209,10 @@ def _get_entities() -> List[dict]:
         },
         {
             "uid": {
-                "__expr": "Photo::\"bobs-photo-1\""
+                "__expr": 'Photo::"bobs-photo-1"'
             },
             "attrs": {
-                "owner": {"__expr": "User::\"bob\""}
+                "owner": {"__expr": 'User::"bob"'}
             },
             "parents": []
         },
@@ -263,21 +263,21 @@ def _get_entities() -> List[dict]:
         },
         {
             "uid": {
-                "__expr": "Action::\"view\""
+                "__expr": 'Action::"view"'
             },
             "attrs": {},
             "parents": []
         },
         {
             "uid": {
-                "__expr": "Action::\"edit\""
+                "__expr": 'Action::"edit"'
             },
             "attrs": {},
             "parents": []
         },
         {
             "uid": {
-                "__expr": "Action::\"delete\""
+                "__expr": 'Action::"delete"'
             },
             "attrs": {},
             "parents": []
